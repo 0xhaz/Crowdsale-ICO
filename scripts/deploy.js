@@ -7,26 +7,52 @@
 const hre = require("hardhat");
 
 async function main() {
-  const currentTimestampInSeconds = Math.round(Date.now() / 1000);
-  const unlockTime = currentTimestampInSeconds + 60;
+  const Name = "DAPP Token";
+  const Symbol = "DAPP";
+  const Max_Supply = "1000000";
+  const price = ethers.utils.parseUnits("0.01", "ether");
 
-  const lockedAmount = hre.ethers.utils.parseEther("0.001");
+  const tokens = n => {
+    return ethers.utils.parseUnits(n.toString(), "ether");
+  };
 
-  const Lock = await hre.ethers.getContractFactory("Lock");
-  const lock = await Lock.deploy(unlockTime, { value: lockedAmount });
+  const dateToUnix = date => {
+    return Math.floor(new Date(date).getTime() / 1000).toString();
+  };
 
-  await lock.deployed();
+  let startTime = dateToUnix(new Date(Date.now()));
+  let endTime = dateToUnix(new Date(Date.now() + 86400000) * 2);
 
-  console.log(
-    `Lock with ${ethers.utils.formatEther(
-      lockedAmount
-    )}ETH and unlock timestamp ${unlockTime} deployed to ${lock.address}`
+  const Crowdsale = await hre.ethers.getContractFactory("Crowdsale");
+  const Token = await hre.ethers.getContractFactory("DAPPToken");
+
+  let token = await Token.deploy(Name, Symbol, Max_Supply);
+  await token.deployed();
+  console.log("Token deployed to:", token.address);
+
+  let crowdsale = await Crowdsale.deploy(
+    token.address,
+    price,
+    Max_Supply,
+    startTime,
+    endTime,
+    tokens(100),
+    tokens(1000)
   );
+  await crowdsale.deployed();
+  console.log("Crowdsale deployed to:", crowdsale.address);
+
+  let transaction = await token.transfer(
+    crowdsale.address,
+    ethers.utils.parseUnits(Max_Supply, "ether")
+  );
+  await transaction.wait();
+  console.log("Transfered to Crowdsale");
 }
 
 // We recommend this pattern to be able to use async/await everywhere
 // and properly handle errors.
-main().catch((error) => {
+main().catch(error => {
   console.error(error);
   process.exitCode = 1;
 });
