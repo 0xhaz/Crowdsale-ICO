@@ -6,6 +6,11 @@ import TOKEN_ABI from "./abis/Token.json";
 import CROWDSALE_ABI from "./abis/Crowdsale.json";
 import config from "./config.json";
 
+import Navigation from "./components/Navigation";
+import Buy from "./components/Buy";
+import Progress from "./components/Progress";
+import Info from "./components/Info";
+
 function App() {
   const [provider, setProvider] = useState(null);
   const [crowdsale, setCrowdsale] = useState(null);
@@ -15,24 +20,34 @@ function App() {
   const [maxTokens, setMaxTokens] = useState(0);
   const [tokensSold, setTokensSold] = useState(0);
   const [price, setPrice] = useState(0);
+  const [chainId, setChainId] = useState(null);
 
   const loadBlockchainData = async () => {
+    if (!window.ethereum) {
+      window.alert("Please install MetaMask");
+      return;
+    }
+
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     setProvider(provider);
 
     const { chainId } = await provider.getNetwork();
+    setChainId(chainId);
 
     const token = new ethers.Contract(
       config[chainId].token.address,
-      TOKEN_ABI,
+      TOKEN_ABI.abi,
       provider
     );
 
+    const crowsaleAddress = config[chainId].crowdsale.address;
+    const signer = provider.getSigner();
     const crowdsale = new ethers.Contract(
       config[chainId].crowdsale.address,
-      CROWDSALE_ABI,
-      provider
+      CROWDSALE_ABI.abi,
+      signer
     );
+    setCrowdsale(crowdsale);
 
     const accounts = await window.ethereum.request({
       method: "eth_requestAccounts",
@@ -59,14 +74,34 @@ function App() {
   };
 
   useEffect(() => {
-    if (isLoading) {
-      loadBlockchainData();
+    loadBlockchainData();
+    const handleAccountsChanged = accounts => {
+      const newAccount = ethers.utils.getAddress(accounts[0]);
+      setAccount(newAccount);
+    };
+
+    if (window.ethereum) {
+      window.ethereum.on("accountsChanged", handleAccountsChanged);
     }
-    setIsLoading(false);
-  }, [isLoading]);
+
+    return () => {
+      if (window.ethereum) {
+        window.ethereum.removeListener(
+          "accountsChanged",
+          handleAccountsChanged
+        );
+      }
+    };
+  }, []);
 
   return (
     <Container>
+      <Navigation
+        provider={provider}
+        crowdsale={crowdsale}
+        account={account}
+        chainId={chainId}
+      />
       <h1 className="my-4 text-center">Introducing the DAPP Token!</h1>
       {isLoading ? (
         <p>Loading...</p>
@@ -76,13 +111,24 @@ function App() {
             <strong>Current Price: </strong>
             {price} ETH
           </p>
+          <Buy
+            provider={provider}
+            crowdsale={crowdsale}
+            price={price}
+            setIsLoading={setIsLoading}
+          />
+          <Progress maxTokens={maxTokens} tokensSold={tokensSold} />
         </>
       )}
       <hr />
       {account && (
-        <>
-          <p>{account}</p>
-        </>
+        <Info
+          account={account}
+          crowdsale={crowdsale}
+          provider={provider}
+          accountBalance={accountBalance}
+          setIsLoading={setIsLoading}
+        />
       )}
     </Container>
   );

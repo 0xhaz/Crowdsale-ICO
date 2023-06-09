@@ -57,15 +57,15 @@ async function saveContractAddresses(tokenAddress, crowdsaleAddress) {
   console.log("Contract addresses and ABIs saved successfully!");
 }
 
+const tokens = n => {
+  return ethers.utils.parseUnits(n.toString(), "ether");
+};
+
 async function main() {
   const Name = "DAPP Token";
   const Symbol = "DAPP";
-  const Max_Supply = "1000000";
+  const Max_Supply = tokens(1000000).toString();
   const price = ethers.utils.parseUnits("0.01", "ether");
-
-  const tokens = n => {
-    return ethers.utils.parseUnits(n.toString(), "ether");
-  };
 
   const dateToUnix = date => {
     return Math.floor(new Date(date).getTime() / 1000).toString();
