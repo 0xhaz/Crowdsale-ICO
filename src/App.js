@@ -10,6 +10,7 @@ import Navigation from "./components/Navigation";
 import Buy from "./components/Buy";
 import Progress from "./components/Progress";
 import Info from "./components/Info";
+import CountdownTimer from "./components/CountdownTimer";
 
 function App() {
   const [provider, setProvider] = useState(null);
@@ -21,6 +22,8 @@ function App() {
   const [tokensSold, setTokensSold] = useState(0);
   const [price, setPrice] = useState(0);
   const [chainId, setChainId] = useState(null);
+  const [startTime, setStartTime] = useState(0);
+  const [endTime, setEndTime] = useState(0);
 
   const loadBlockchainData = async () => {
     if (!window.ethereum) {
@@ -70,6 +73,12 @@ function App() {
     const tokensSold = await crowdsale.tokensSold();
     setTokensSold(ethers.utils.formatUnits(tokensSold, 18));
 
+    const startTime = await crowdsale.startTime();
+    setStartTime(startTime.toNumber() * 1000); // Convert to milliseconds
+
+    const endTime = await crowdsale.endTime();
+    setEndTime(endTime.toNumber() * 1000); // Convert to milliseconds
+
     setIsLoading(false);
   };
 
@@ -111,12 +120,20 @@ function App() {
             <strong>Current Price: </strong>
             {price} ETH
           </p>
+          {startTime && endTime && (
+            <CountdownTimer
+              startTime={new Date(startTime)}
+              endTime={new Date(endTime)}
+            />
+          )}
+
           <Buy
             provider={provider}
             crowdsale={crowdsale}
             price={price}
             setIsLoading={setIsLoading}
           />
+
           <Progress maxTokens={maxTokens} tokensSold={tokensSold} />
         </>
       )}

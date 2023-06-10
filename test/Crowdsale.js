@@ -299,8 +299,13 @@ describe("Crowdsale", () => {
         transaction = await crowdsale.connect(user1).requestWhitelist();
         result = await transaction.wait();
 
-        transaction = await crowdsale.connect(user1).requestWhitelist();
+        transaction = await crowdsale.connect(user2).requestWhitelist();
         result = await transaction.wait();
+      });
+
+      it("stores all the whitelist request", async () => {
+        const pendingAddresses = await crowdsale.getPendingStatusAddr();
+        expect(pendingAddresses).to.deep.equal([user1.address, user2.address]);
       });
 
       it("set the WhiteListStatus to Pending", async () => {

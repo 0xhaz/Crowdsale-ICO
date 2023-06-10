@@ -14,6 +14,7 @@ contract Crowdsale {
     uint256 public endTime;
     uint256 public minPurchase;
     uint256 public maxPurchase;
+    address[] public requestors;
     bool refundStatus;
 
     enum WhitelistStatus {
@@ -23,8 +24,9 @@ contract Crowdsale {
     }
 
     mapping(address => bool) public isWhitelisted;
-    mapping(address => WhitelistStatus) public whiteListStatus;
+    mapping(address => WhitelistStatus) public whitelistStatus;
     mapping(address => uint256) public purchaseAmount;
+    mapping(address => bool) public isPendingWhitelist;
 
     event Buy(uint256 amount, address buyer);
     event Finalize(uint256 amount, uint256 value);
@@ -116,20 +118,24 @@ contract Crowdsale {
 
     function requestWhitelist() public {
         require(
-            whiteListStatus[msg.sender] == WhitelistStatus.Pending,
+            whitelistStatus[msg.sender] == WhitelistStatus.Pending,
             "You have already requested"
         );
-        whiteListStatus[msg.sender] = WhitelistStatus.Pending;
+        whitelistStatus[msg.sender] = WhitelistStatus.Pending;
+        isPendingWhitelist[msg.sender] = true;
+
+        requestors.push(msg.sender);
 
         emit AddressAdded(msg.sender);
     }
 
     function approveWhitelist(address _addr) public onlyOwner {
         require(
-            whiteListStatus[_addr] == WhitelistStatus.Pending,
+            whitelistStatus[_addr] == WhitelistStatus.Pending,
             "Address is not in pending list"
         );
-        whiteListStatus[_addr] = WhitelistStatus.Approved;
+        whitelistStatus[_addr] = WhitelistStatus.Approved;
+        isPendingWhitelist[_addr] = false;
         isWhitelisted[_addr] = true;
 
         emit AddressApproved(_addr);
@@ -140,8 +146,9 @@ contract Crowdsale {
     ) public onlyOwner {
         for (uint256 i = 0; i < _addresses.length; i++) {
             address _addr = _addresses[i];
-            if (whiteListStatus[_addr] == WhitelistStatus.Pending) {
-                whiteListStatus[_addr] = WhitelistStatus.Approved;
+            if (whitelistStatus[_addr] == WhitelistStatus.Pending) {
+                whitelistStatus[_addr] = WhitelistStatus.Approved;
+                isPendingWhitelist[_addr] = false;
                 isWhitelisted[_addr] = true;
                 emit AddressApproved(_addr);
             }
@@ -153,8 +160,9 @@ contract Crowdsale {
     ) public onlyOwner {
         for (uint256 i = 0; i < _addresses.length; i++) {
             address _addr = _addresses[i];
-            if (whiteListStatus[_addr] == WhitelistStatus.Pending) {
-                whiteListStatus[_addr] = WhitelistStatus.Rejected;
+            if (whitelistStatus[_addr] == WhitelistStatus.Pending) {
+                whitelistStatus[_addr] = WhitelistStatus.Rejected;
+                isPendingWhitelist[_addr] = false;
                 emit AddressRejected(_addr);
             }
         }
@@ -162,10 +170,11 @@ contract Crowdsale {
 
     function rejectWhitelist(address _addr) public onlyOwner {
         require(
-            whiteListStatus[_addr] == WhitelistStatus.Pending,
+            whitelistStatus[_addr] == WhitelistStatus.Pending,
             "Address is not in pending list"
         );
-        whiteListStatus[_addr] = WhitelistStatus.Rejected;
+        whitelistStatus[_addr] = WhitelistStatus.Rejected;
+        isPendingWhitelist[_addr] = false;
 
         emit AddressRejected(_addr);
     }
@@ -181,9 +190,31 @@ contract Crowdsale {
             _addresses.length
         );
         for (uint256 i = 0; i < _addresses.length; i++) {
-            status[i] = whiteListStatus[_addresses[i]];
+            status[i] = whitelistStatus[_addresses[i]];
         }
         return status;
+    }
+
+    function getPendingStatusAddr() public view returns (address[] memory) {
+        address[] memory addresses = new address[](requestorsCount());
+        uint256 index = 0;
+        for (uint256 i = 0; i < requestors.length; i++) {
+            if (isPendingWhitelist[requestors[i]] == true) {
+                addresses[index] = requestors[i];
+                index++;
+            }
+        }
+        return addresses;
+    }
+
+    function requestorsCount() private view returns (uint256) {
+        uint256 count = 0;
+        for (uint256 i = 0; i < requestors.length; i++) {
+            if (isPendingWhitelist[requestors[i]]) {
+                count++;
+            }
+        }
+        return count;
     }
 
     function whitelistAddress(address _addr) public onlyOwner {

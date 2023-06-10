@@ -19,15 +19,21 @@ const ModalComponent = ({
   const [isLoading, setIsLoading] = useState(true);
   const [key, setKey] = useState("addresses");
   const [whitelistStatus, setWhitelistStatus] = useState([]);
+  const [selectedAddresses, setSelectedAddresses] = useState([]);
 
   const loadAdminData = async () => {
     if (!provider) return;
     try {
       const signer = await provider.getSigner();
       const startTime = await crowdsale.startTime();
-      setStartTime(startTime);
+      console.log("startTime", startTime.toString());
+      const formattedStartTime = new Date(startTime * 1000)
+        .toISOString()
+        .slice(0, -8);
+      setStartTime(formattedStartTime);
       const endTime = await crowdsale.endTime();
-      setEndTime(endTime);
+      console.log("endTime", endTime.toString());
+      setEndTime(new Date(endTime * 1000).toISOString().slice(0, -8));
       const minPurchase = await crowdsale.minPurchase();
       setMinPurchase(ethers.utils.formatUnits(minPurchase, 18));
       const maxPurchase = await crowdsale.maxPurchase();
@@ -38,27 +44,89 @@ const ModalComponent = ({
     }
   };
 
-  const fetchWhitelistStatus = async addresses => {
+  const fetchWhitelistStatus = async () => {
     if (!provider || !crowdsale || !chainId) return;
     try {
-      const status = await crowdsale.getWhitelistStatusAll(addresses);
-      const pendingAddresses = [];
-      for (let i = 0; i < addresses.length; i++) {
-        if (status[i] === 0) {
-          pendingAddresses.push(addresses[i]);
-        }
-      }
-      console.log("Pending addresses", pendingAddresses);
+      const pendingAddresses = await crowdsale.getPendingStatusAddr();
+      console.log("pendingAddresses", pendingAddresses);
       setWhitelistStatus(pendingAddresses);
+      setSelectedAddresses(pendingAddresses);
     } catch (error) {
       console.log("Error retrieving whitelist status", error);
+    }
+  };
+
+  const isPendingWhitelist = async address => {
+    if (!provider || !crowdsale || !chainId) return false;
+    try {
+      const pendingStatus = await crowdsale.isPendingWhitelist(address);
+      return pendingStatus;
+    } catch (error) {
+      console.log("Error retrieving whitelist status", error);
+      return false;
+    }
+  };
+
+  const handleApprove = async address => {
+    if (!provider || !crowdsale || !chainId) return;
+
+    try {
+      const signer = await provider.getSigner();
+      const transaction = await crowdsale
+        .connect(signer)
+        .approveWhitelist(address);
+      await transaction.wait();
+    } catch (error) {
+      console.log("Error approving address", error);
+    }
+  };
+
+  const handleApproveAll = async () => {
+    if (!provider || !crowdsale || !chainId) return;
+
+    try {
+      const signer = await provider.getSigner();
+      const transaction = await crowdsale
+        .connect(signer)
+        .approveWhitelistToAll(selectedAddresses);
+      await transaction.wait();
+    } catch (error) {
+      console.log("Error approving address", error);
+    }
+  };
+
+  const handleRejectAll = async () => {
+    if (!provider || !crowdsale || !chainId) return;
+
+    try {
+      const signer = await provider.getSigner();
+      const transaction = await crowdsale
+        .connect(signer)
+        .rejectWhitelistToAll(selectedAddresses);
+      await transaction.wait();
+    } catch (error) {
+      console.log("Error rejecting address", error);
+    }
+  };
+
+  const handleReject = async address => {
+    if (!provider || !crowdsale || !chainId) return;
+
+    try {
+      const signer = await provider.getSigner();
+      const transaction = await crowdsale
+        .connect(signer)
+        .rejectWhitelist(address);
+      await transaction.wait();
+    } catch (error) {
+      console.log("Error rejecting address", error);
     }
   };
 
   useEffect(() => {
     loadAdminData();
     if (crowdsale && chainId) {
-      fetchWhitelistStatus([config[chainId].crowdsale.address]);
+      fetchWhitelistStatus();
     }
   }, [crowdsale, chainId]);
 
@@ -81,8 +149,20 @@ const ModalComponent = ({
                 <p className="mb-0">Approve / Reject Address</p>
               </Col>
               <Col className="d-flex justify-content-end">
-                <Button className="m-3">Approve All</Button>
-                <Button className="m-3">Reject All</Button>
+                <Button
+                  className="m-3"
+                  onClick={() => handleApproveAll()}
+                  disabled={selectedAddresses.length === 0}
+                >
+                  Approve All
+                </Button>
+                <Button
+                  className="m-3"
+                  onClick={() => handleRejectAll()}
+                  disabled={selectedAddresses.length === 0}
+                >
+                  Reject All
+                </Button>
               </Col>
               <hr />
 
@@ -92,8 +172,24 @@ const ModalComponent = ({
                     <p className="mb-0">{address}</p>
                   </Col>
                   <Col className="text-end">
-                    <Button className="m-2">Approve</Button>
-                    <Button className="m-2">Reject</Button>
+                    {isPendingWhitelist(address) && (
+                      <>
+                        <Button
+                          className="m-2"
+                          onClick={() => handleApprove(address)}
+                          disabled={!isPendingWhitelist(address)}
+                        >
+                          Approve
+                        </Button>
+                        <Button
+                          className="m-2"
+                          onClick={() => handleReject(address)}
+                          disabled={!isPendingWhitelist(address)}
+                        >
+                          Reject
+                        </Button>
+                      </>
+                    )}
                   </Col>
                 </Row>
               ))}
