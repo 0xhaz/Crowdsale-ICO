@@ -36,18 +36,17 @@ const Buy = ({ provider, price, crowdsale, setIsLoading }) => {
         "ether"
       );
 
-      const transaction = await crowdsale
+      let transaction = await crowdsale
         .connect(signer)
         .buyTokens(formattedAmount, { value });
 
       await transaction.wait();
-
-      setAmount(0);
     } catch (err) {
       window.alert("User rejected transaction or transaction reverted");
     }
 
-    setIsLoading(true);
+    setIsWaiting(false);
+    setAmount(0);
   };
 
   return (
