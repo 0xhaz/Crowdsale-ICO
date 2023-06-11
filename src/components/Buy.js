@@ -41,6 +41,8 @@ const Buy = ({ provider, price, crowdsale, setIsLoading }) => {
         .buyTokens(formattedAmount, { value });
 
       await transaction.wait();
+
+      setAmount(0);
     } catch (err) {
       window.alert("User rejected transaction or transaction reverted");
     }

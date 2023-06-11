@@ -5,7 +5,7 @@ import "./DAPPToken.sol";
 import "hardhat/console.sol";
 
 contract Crowdsale {
-    address public owner;
+    address payable public owner;
     DAPPToken public dappToken;
     uint256 public price;
     uint256 public maxTokens;
@@ -27,12 +27,14 @@ contract Crowdsale {
     mapping(address => WhitelistStatus) public whitelistStatus;
     mapping(address => uint256) public purchaseAmount;
     mapping(address => bool) public isPendingWhitelist;
+    mapping(address => mapping(address => uint256)) allowed;
 
     event Buy(uint256 amount, address buyer);
     event Finalize(uint256 amount, uint256 value);
     event AddressAdded(address indexed _addr);
     event AddressApproved(address indexed _addr);
     event AddressRejected(address indexed _addr);
+    event Refund(address indexed _addr, uint256 amount);
 
     constructor(
         DAPPToken _dappToken,
@@ -43,7 +45,7 @@ contract Crowdsale {
         uint256 _minPurchase,
         uint256 _maxPurchase
     ) {
-        owner = msg.sender;
+        owner = payable(msg.sender);
         dappToken = _dappToken;
         price = _price;
         maxTokens = _maxTokens;
@@ -82,11 +84,13 @@ contract Crowdsale {
     function buyTokens(
         uint256 _amount
     ) public payable onlyWhiteListed onlyWhileOpen {
-        require(msg.value == (_amount / 1e18) * price);
+        uint256 requiredEth = (_amount / 1e18) * price;
+        require(msg.value == requiredEth, "Invalid amount of Ether");
         require(_amount <= maxPurchase && _amount >= minPurchase);
         require(dappToken.balanceOf(address(this)) >= _amount);
 
         purchaseAmount[msg.sender] += _amount;
+
         require(dappToken.transfer(msg.sender, _amount));
 
         tokensSold += _amount;
@@ -242,18 +246,38 @@ contract Crowdsale {
         refundStatus = false;
     }
 
+    function setRefundStatus(bool _status) public onlyOwner {
+        refundStatus = _status;
+    }
+
+    function withdrawBalance() public onlyOwner {
+        require(address(this).balance > 0, "Balance is zero");
+        (bool success, ) = owner.call{value: address(this).balance}("");
+        require(success, "Failed to send Ether");
+    }
+
+    function _checkAllowance(address _sender) private view returns (uint256) {
+        return dappToken.allowance(_sender, address(this));
+    }
+
     function refundCampaign() public onlyCampaignEnd {
         require(refundStatus == true, "Refund is not enabled");
 
         uint256 refundAmount = purchaseAmount[msg.sender];
 
         require(refundAmount > 0, "You have not purchased any tokens");
-        purchaseAmount[msg.sender] = 0;
-        tokensSold -= refundAmount / price;
 
-        require(
-            dappToken.transferFrom(msg.sender, address(this), refundAmount)
-        );
-        payable(msg.sender).transfer(refundAmount);
+        purchaseAmount[msg.sender] = 0;
+        tokensSold -= refundAmount;
+
+        dappToken.transferFrom(msg.sender, address(this), refundAmount);
+
+        uint256 ethAmount = refundAmount * price;
+        require(address(this).balance >= ethAmount, "Insufficient balance");
+
+        (bool ethSuccess, ) = msg.sender.call{value: ethAmount}("");
+        require(ethSuccess, "Failed to send Ether");
+
+        emit Refund(msg.sender, refundAmount);
     }
 }

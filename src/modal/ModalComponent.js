@@ -1,8 +1,16 @@
 import { ethers } from "ethers";
 import { useState, useEffect } from "react";
-import { Modal, Button, Tabs, Tab, Form, Col, Row } from "react-bootstrap";
+import {
+  Modal,
+  Button,
+  Tabs,
+  Tab,
+  Form,
+  Col,
+  Row,
+  Spinner,
+} from "react-bootstrap";
 import "./modal.css";
-import config from "../config.json";
 
 const ModalComponent = ({
   showModal,
@@ -20,6 +28,9 @@ const ModalComponent = ({
   const [key, setKey] = useState("addresses");
   const [whitelistStatus, setWhitelistStatus] = useState([]);
   const [selectedAddresses, setSelectedAddresses] = useState([]);
+  const [price, setPrice] = useState(0);
+  const [isWaiting, setIsWaiting] = useState(false);
+  const [timezone, setTimezone] = useState("");
 
   const loadAdminData = async () => {
     if (!provider) return;
@@ -38,6 +49,8 @@ const ModalComponent = ({
       setMinPurchase(ethers.utils.formatUnits(minPurchase, 18));
       const maxPurchase = await crowdsale.maxPurchase();
       setMaxPurchase(ethers.utils.formatUnits(maxPurchase, 18));
+      const price = await crowdsale.price();
+      setPrice(ethers.utils.formatUnits(price, 18));
       setIsLoading(false);
     } catch (error) {
       console.log("Error retrieving admin data", error);
@@ -123,12 +136,83 @@ const ModalComponent = ({
     }
   };
 
+  const handleSubmit = async e => {
+    e.preventDefault();
+    if (!provider || !crowdsale || !chainId) return;
+
+    try {
+      const signer = await provider.getSigner();
+
+      setIsWaiting(true);
+
+      let transaction = await crowdsale
+        .connect(signer)
+        .setPrice(ethers.utils.parseUnits(price.toString(), 18));
+      await transaction.wait();
+
+      transaction = await crowdsale
+        .connect(signer)
+        .setContribution(
+          ethers.utils.parseUnits(minPurchase.toString(), 18),
+          ethers.utils.parseUnits(maxPurchase.toString(), 18)
+        );
+      await transaction.wait();
+
+      const startTimestamp = new Date(startTime).getTime() / 1000;
+      const endTimestamp = new Date(endTime).getTime() / 1000;
+
+      transaction = await crowdsale
+        .connect(signer)
+        .restartCampaign(startTimestamp, endTimestamp);
+      await transaction.wait();
+
+      setIsWaiting(false);
+    } catch (error) {
+      console.log("Error submitting form", error);
+    }
+  };
+
+  const handleRefund = async () => {
+    if (!provider || !crowdsale || !chainId) return;
+    try {
+      const signer = await provider.getSigner();
+
+      const transaction = await crowdsale.connect(signer).setRefundStatus(true);
+      await transaction.wait();
+    } catch (error) {
+      window.alert("Error refunding", error);
+    }
+  };
+
+  const handleWithdraw = async () => {
+    if (!provider || !crowdsale || !chainId) return;
+    try {
+      const signer = await provider.getSigner();
+      const transaction = await crowdsale.connect(signer).withdrawBalance();
+      await transaction.wait();
+    } catch (error) {
+      window.alert("Error withdrawing", error);
+    }
+  };
+
   useEffect(() => {
     loadAdminData();
     if (crowdsale && chainId) {
       fetchWhitelistStatus();
     }
   }, [crowdsale, chainId]);
+
+  useEffect(() => {
+    const fetchTimezone = async () => {
+      try {
+        const { timeZone } = Intl.DateTimeFormat().resolvedOptions();
+        setTimezone(timeZone);
+      } catch (error) {
+        console.log("Error retrieving timezone", error);
+      }
+    };
+    fetchTimezone();
+  }, []);
 
   return (
     <Modal show={showModal} onHide={handleClose} size="lg">
@@ -143,29 +227,49 @@ const ModalComponent = ({
           className="mb-3 tab-container"
           fill
         >
-          <Tab eventKey="addresses" title="Addresses">
+          <Tab eventKey="addresses" title="Addresses / Refund / Withdraw">
             <Row className="align-items-center">
-              <Col>
-                <p className="mb-0">Approve / Reject Address</p>
-              </Col>
-              <Col className="d-flex justify-content-end">
-                <Button
-                  className="m-3"
-                  onClick={() => handleApproveAll()}
-                  disabled={selectedAddresses.length === 0}
-                >
-                  Approve All
-                </Button>
-                <Button
-                  className="m-3"
-                  onClick={() => handleRejectAll()}
-                  disabled={selectedAddresses.length === 0}
-                >
-                  Reject All
-                </Button>
-              </Col>
-              <hr />
+              <Row className="align-items-center">
+                <Col>
+                  <p className="mb-0">Enable Refund (only when expired)</p>
+                </Col>
+                <Col className="text-end m-3">
+                  <Button onClick={handleRefund}>Enable Refund</Button>
+                </Col>
+              </Row>
 
+              <Row className="align-items-center ">
+                <Col>
+                  <p className="mb-0">Withdraw Balance (only if successful)</p>
+                </Col>
+                <Col className="text-end m-3">
+                  <Button onClick={handleWithdraw}>Withdraw Balance</Button>
+                </Col>
+              </Row>
+
+              <Row className="align-items-center">
+                <Col>
+                  <p className="mb-0">Approve / Reject Address</p>
+                </Col>
+                <Col className="d-flex justify-content-end">
+                  <Button
+                    className="m-3"
+                    onClick={() => handleApproveAll()}
+                    disabled={selectedAddresses.length === 0}
+                  >
+                    Approve All
+                  </Button>
+                  <Button
+                    className="m-3"
+                    onClick={() => handleRejectAll()}
+                    disabled={selectedAddresses.length === 0}
+                  >
+                    Reject All
+                  </Button>
+                </Col>
+              </Row>
+
+              <hr />
               {whitelistStatus.map((address, index) => (
                 <Row className="align-items-center" key={index}>
                   <Col>
@@ -196,7 +300,16 @@ const ModalComponent = ({
             </Row>
           </Tab>
           <Tab eventKey="form" title="Form">
-            <Form>
+            <Form onSubmit={handleSubmit}>
+              <Form.Group controlId="price">
+                <Form.Label>Price</Form.Label>
+                <Form.Control
+                  type="number"
+                  placeholder="Enter new price"
+                  value={price}
+                  onChange={e => setPrice(e.target.value)}
+                />
+              </Form.Group>
               <Form.Group controlId="minPurchase">
                 <Form.Label>Min Purchase</Form.Label>
                 <Form.Control
@@ -222,6 +335,7 @@ const ModalComponent = ({
                   value={startTime}
                   onChange={e => setStartTime(e.target.value)}
                 />
+                {timezone && <p className="text-muted">Timezone: {timezone}</p>}
               </Form.Group>
               <Form.Group controlId="endTime">
                 <Form.Label>End Time</Form.Label>
@@ -230,15 +344,25 @@ const ModalComponent = ({
                   value={endTime}
                   onChange={e => setEndTime(e.target.value)}
                 />
+                {timezone && <p className="text-muted">Timezone: {timezone}</p>}
               </Form.Group>
             </Form>
           </Tab>
         </Tabs>
       </Modal.Body>
       <Modal.Footer>
-        <Button variant="secondary" onClick={handleClose}>
-          Close
-        </Button>
+        {isWaiting ? (
+          <Spinner animation="border" role="status" />
+        ) : (
+          <>
+            <Button variant="primary" onClick={handleSubmit}>
+              Submit
+            </Button>
+            <Button variant="secondary" onClick={handleClose}>
+              Close
+            </Button>
+          </>
+        )}
       </Modal.Footer>
     </Modal>
   );

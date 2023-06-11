@@ -1,12 +1,29 @@
 import React, { useEffect, useState } from "react";
 import DateTimeDisplay from "./DateTimeDisplay";
 import styles from "./CountdownTimer.module.css";
+import { Button } from "react-bootstrap";
+import { ethers } from "ethers";
 
-const ExpiredNotice = () => {
+const SuccessNotice = () => {
+  return (
+    <div className={styles["success-notice"]}>
+      <span>Campaign Successful!</span>
+      <p>Thank you for your support.</p>
+    </div>
+  );
+};
+
+const ExpiredNotice = ({ handleRefund }) => {
   return (
     <div className={styles["expired-notice"]}>
-      <span>Expired!!!</span>
-      <p>Please select a future date and time.</p>
+      <span>Expired!</span>
+      <p>
+        The campaign has ended without reaching the target
+        <br /> Click on the refund to claim your ETH
+      </p>
+      <Button variant="primary" onClick={handleRefund}>
+        Refund
+      </Button>
     </div>
   );
 };
@@ -32,11 +49,53 @@ const ShowCounter = ({ days, hours, minutes, seconds }) => {
   );
 };
 
-const CountdownTimer = ({ startTime, endTime }) => {
+const CountdownTimer = ({
+  startTime,
+  endTime,
+  crowdsale,
+  provider,
+  tokensSold,
+  maxTokens,
+  token,
+  price,
+}) => {
   const [days, setDays] = useState(0);
   const [hours, setHours] = useState(0);
   const [minutes, setMinutes] = useState(0);
   const [seconds, setSeconds] = useState(0);
+
+  const handleRefund = async () => {
+    if (!provider || !crowdsale) return;
+    let transaction;
+
+    try {
+      const signer = await provider.getSigner();
+      const totalAmount = await token.balanceOf(signer.getAddress());
+      const contractBalanceWei = await provider.getBalance(crowdsale.address);
+      const contractBalanceEth = ethers.utils.formatEther(contractBalanceWei);
+      console.log("contractBalance", contractBalanceEth);
+
+      const tokenWithSigner = token.connect(signer);
+      transaction = await tokenWithSigner.approve(
+        crowdsale.address,
+        totalAmount
+      );
+      await transaction.wait();
+
+      const value = ethers.utils.parseUnits(
+        (totalAmount * price).toString(),
+        "ether"
+      );
+
+      transaction = await crowdsale.connect(signer).refundCampaign();
+      await transaction.wait();
+    } catch (error) {
+      // window.alert(
+      //   "There was an error while refunding, please try again later"
+      // );
+      console.log(error);
+    }
+  };
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -78,8 +137,12 @@ const CountdownTimer = ({ startTime, endTime }) => {
     };
   }, [startTime, endTime]);
 
-  if (days + hours + minutes + seconds <= 0) {
-    return <ExpiredNotice />;
+  const targetReached = tokensSold >= maxTokens * 0.8;
+
+  if (targetReached) {
+    return <SuccessNotice />;
+  } else if (days + hours + minutes + seconds <= 0) {
+    return <ExpiredNotice handleRefund={handleRefund} />;
   } else {
     return (
       <ShowCounter

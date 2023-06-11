@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ethers } from "ethers";
-import { Container } from "react-bootstrap";
+import { Container, Spinner } from "react-bootstrap";
 
 import TOKEN_ABI from "./abis/Token.json";
 import CROWDSALE_ABI from "./abis/Crowdsale.json";
@@ -24,6 +24,7 @@ function App() {
   const [chainId, setChainId] = useState(null);
   const [startTime, setStartTime] = useState(0);
   const [endTime, setEndTime] = useState(0);
+  const [token, setToken] = useState(null);
 
   const loadBlockchainData = async () => {
     if (!window.ethereum) {
@@ -42,6 +43,7 @@ function App() {
       TOKEN_ABI.abi,
       provider
     );
+    setToken(token);
 
     const crowsaleAddress = config[chainId].crowdsale.address;
     const signer = provider.getSigner();
@@ -113,7 +115,7 @@ function App() {
       />
       <h1 className="my-4 text-center">Introducing the DAPP Token!</h1>
       {isLoading ? (
-        <p>Loading...</p>
+        <Spinner animation="border" variant="primary" />
       ) : (
         <>
           <p className="text-center">
@@ -124,6 +126,10 @@ function App() {
             <CountdownTimer
               startTime={new Date(startTime)}
               endTime={new Date(endTime)}
+              crowdsale={crowdsale}
+              provider={provider}
+              token={token}
+              price={price}
             />
           )}
 
