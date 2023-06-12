@@ -20,7 +20,8 @@ contract Crowdsale {
     enum WhitelistStatus {
         Pending,
         Approved,
-        Rejected
+        Rejected,
+        None
     }
 
     mapping(address => bool) public isWhitelisted;
@@ -123,13 +124,15 @@ contract Crowdsale {
     }
 
     function requestWhitelist() public {
-        require(
-            whitelistStatus[msg.sender] == WhitelistStatus.Pending,
-            "You have already requested"
-        );
+        if (
+            whitelistStatus[msg.sender] != WhitelistStatus.Pending &&
+            whitelistStatus[msg.sender] != WhitelistStatus.None
+        ) {
+            revert("You have already requested");
+        }
+
         whitelistStatus[msg.sender] = WhitelistStatus.Pending;
         isPendingWhitelist[msg.sender] = true;
-
         requestors.push(msg.sender);
 
         emit AddressAdded(msg.sender);
@@ -246,6 +249,17 @@ contract Crowdsale {
         startTime = _startTime;
         endTime = _endTime;
         refundStatus = false;
+
+        resetWhitelist();
+    }
+
+    function resetWhitelist() internal onlyOwner {
+        for (uint256 i = 0; i < requestors.length; i++) {
+            address requestor = requestors[i];
+            isWhitelisted[requestor] = false;
+            whitelistStatus[requestor] = WhitelistStatus.None;
+            isPendingWhitelist[requestor] = false;
+        }
     }
 
     function setRefundStatus(bool _status) public onlyOwner {

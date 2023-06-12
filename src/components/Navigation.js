@@ -101,7 +101,8 @@ const Navigation = ({ provider, crowdsale, account, chainId }) => {
             <Button
               variant="primary"
               onClick={handleAdmin}
-              disabled={!isConnected || !isAdmin}
+              disabled={!isConnected}
+              // disabled={!isConnected || !isAdmin}
             >
               Admin
             </Button>

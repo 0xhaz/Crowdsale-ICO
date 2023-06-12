@@ -130,6 +130,8 @@ function App() {
               provider={provider}
               token={token}
               price={price}
+              tokensSold={tokensSold}
+              maxTokens={maxTokens}
             />
           )}
 

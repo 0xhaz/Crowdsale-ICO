@@ -188,7 +188,7 @@ const ModalComponent = ({
     if (!provider || !crowdsale || !chainId) return;
     try {
       const signer = await provider.getSigner();
-      const transaction = await crowdsale.connect(signer).withdrawBalance();
+      const transaction = await crowdsale.connect(signer).finalize();
       await transaction.wait();
     } catch (error) {
       window.alert("Error withdrawing", error);

@@ -90,10 +90,9 @@ const CountdownTimer = ({
       transaction = await crowdsale.connect(signer).refundCampaign();
       await transaction.wait();
     } catch (error) {
-      // window.alert(
-      //   "There was an error while refunding, please try again later"
-      // );
-      console.log(error);
+      window.alert(
+        "There was an error while refunding, please try again later"
+      );
     }
   };
 
@@ -139,19 +138,22 @@ const CountdownTimer = ({
 
   const targetReached = tokensSold >= maxTokens * 0.8;
 
-  if (targetReached) {
-    return <SuccessNotice />;
-  } else if (days + hours + minutes + seconds <= 0) {
-    return <ExpiredNotice handleRefund={handleRefund} />;
-  } else {
-    return (
-      <ShowCounter
-        days={days}
-        hours={hours}
-        minutes={minutes}
-        seconds={seconds}
-      />
-    );
+  if (days + hours + minutes + seconds <= 0) {
+    // Countdown has reached zero
+    if (targetReached) {
+      return <SuccessNotice />;
+    } else {
+      return <ExpiredNotice handleRefund={handleRefund} />;
+    }
   }
+  return (
+    <ShowCounter
+      days={days}
+      hours={hours}
+      minutes={minutes}
+      seconds={seconds}
+    />
+  );
 };
+
 export default CountdownTimer;

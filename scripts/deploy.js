@@ -72,7 +72,7 @@ async function main() {
   };
 
   let startTime = dateToUnix(new Date(Date.now()));
-  let endTime = dateToUnix(new Date(Date.now() + 86400000) * 2);
+  let endTime = dateToUnix(new Date(Date.now() + 86400000 * 7));
 
   const Crowdsale = await hre.ethers.getContractFactory("Crowdsale");
   const Token = await hre.ethers.getContractFactory("DAPPToken");

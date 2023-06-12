@@ -15,6 +15,7 @@ const WhitelistStatus = {
   Pending: 0,
   Approved: 1,
   Rejected: 2,
+  None: 3,
 };
 
 describe("Crowdsale", () => {
@@ -351,6 +352,61 @@ describe("Crowdsale", () => {
           WhitelistStatus.Rejected,
           WhitelistStatus.Rejected,
         ]);
+      });
+    });
+  });
+
+  describe("Reset Campaign", () => {
+    let transaction, result;
+    let minAmount = tokens(100);
+    let value = ether(100);
+
+    describe("Success", () => {
+      let startTime = Math.floor(Date.now() / 1000);
+      beforeEach(async () => {
+        // transaction = await crowdsale
+        //   .connect(deployer)
+        //   .whitelistAddress(user1.address);
+        // result = await transaction.wait();
+
+        transaction = await crowdsale.connect(user1).requestWhitelist();
+        result = await transaction.wait();
+
+        transaction = await crowdsale
+          .connect(deployer)
+          .approveWhitelist(user1.address);
+
+        transaction = await crowdsale
+          .connect(user1)
+          .buyTokens(minAmount, { value: value });
+        result = await transaction.wait();
+
+        transaction = await crowdsale
+          .connect(deployer)
+          .restartCampaign(startTime, endTime);
+        result = await transaction.wait();
+      });
+
+      it("update campaign with new start and end date", async () => {
+        expect(await crowdsale.startTime()).to.equal(startTime);
+        expect(await crowdsale.endTime()).to.equal(endTime);
+      });
+
+      it("set the WhiteListStatus to None", async () => {
+        const whitelistStatus = await crowdsale.getWhitelistStatusAll([
+          user1.address,
+        ]);
+        expect(whitelistStatus).to.deep.equal([WhitelistStatus.None]);
+      });
+
+      it("able to request whitelist and set it to Pending", async () => {
+        transaction = await crowdsale.connect(user1).requestWhitelist();
+        result = await transaction.wait();
+
+        const whitelistStatus = await crowdsale.getWhitelistStatusAll([
+          user1.address,
+        ]);
+        expect(whitelistStatus).to.deep.equal([WhitelistStatus.Pending]);
       });
     });
   });
