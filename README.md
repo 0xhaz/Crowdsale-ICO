@@ -1,6 +1,8 @@
 # Crowdsale
 
-![Crowdsale Demo](https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMzYwMjZjNDM2MjEzYWM4YzFkMjAzMWYxYjVjZTIxNGRkMWFmOTEwMiZlcD12MV9pbnRlcm5hbF9naWZzX2dpZklkJmN0PWc/Zf1pBcpxPUdDAjFbbE/giphy.gif)
+<p align="center">
+  <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMzYwMjZjNDM2MjEzYWM4YzFkMjAzMWYxYjVjZTIxNGRkMWFmOTEwMiZlcD12MV9pbnRlcm5hbF9naWZzX2dpZklkJmN0PWc/Zf1pBcpxPUdDAjFbbE/giphy.gif" alt="Crowdsale Demo" width="500">
+</p>
 
 This project implements a Crowdsale contract that facilitates the sale of tokens in exchange for Ether (ETH). The Crowdsale contract allows users to participate in the token sale by sending Ether to the contract address and receiving tokens in return. The project aims to provide a secure and transparent platform for fundraising through token sales.
 
