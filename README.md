@@ -54,7 +54,11 @@ To participate in the token sale, users should follow the instructions below:
 
 In this scenario, the token sale campaign is successful. Here's a step-by-step walkthrough of the process:
 
-1. The contract owner deploys the Crowdsale contract with the desired parameters, such as token price, maximum tokens, sale start and end time, and purchase restrictions.
+<p align="center">
+  <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExN2NmNmVjZTgxOTc0MGI5NGJmMWQ0ZTQ0ODhkMTBhZmEzZjUwMzcwZCZlcD12MV9pbnRlcm5hbF9naWZzX2dpZklkJmN0PWc/3MuPq6HAdmRFxZC4MB/giphy.gif" alt="Crowdsale Demo" width="800">
+</p>
+
+1. The contract owner deploys the Crowdsale contract with the desired parameters, such as token price, maximum tokens, sale start and end time, and purchase restrictions. For this demo purposes, we can set the if the campaign has reached 80% sold from the total supply to make sure the campaign is successful.
 2. The contract owner approves whitelisting requests for participating addresses or manually adds addresses to the whitelist.
 3. During the token sale period, whitelisted participants send Ether to the contract address.
 4. The contract calculates the number of tokens to be allocated based on the Ether sent and the token price.
