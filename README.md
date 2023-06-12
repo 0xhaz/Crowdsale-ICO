@@ -65,13 +65,21 @@ In this scenario, the token sale campaign is successful. Here's a step-by-step w
 </p>
 
 2. The contract owner approves whitelisting requests for participating addresses or manually adds addresses to the whitelist.
+
+<p align="center">
+  <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZTRiNGRmYzI1NTMxYWJmMDYzNDhmYWYwNjkzMTRkMzY2OGFmMzU1ZSZlcD12MV9pbnRlcm5hbF9naWZzX2dpZklkJmN0PWc/Yb7CSb9jCXUT1XI0Gs/giphy.gif" alt="Crowdsale Demo" width="800">
+</p>
 3. During the token sale period, whitelisted participants send Ether to the contract address.
 4. The contract calculates the number of tokens to be allocated based on the Ether sent and the token price using this calculation `requiredEth = (token amount / 10**18) * token price`
 5. The contract transfers the allocated tokens to the participants' addresses.
 6. The tokens sold counter and the participants' token balances are updated accordingly.
+
+<p align="center">
+  <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZThiMDQ4NTQyNzY4ZjhlNzU2YTIzM2VkYmFkNTk4Y2ZkNjI0N2I5YiZlcD12MV9pbnRlcm5hbF9naWZzX2dpZklkJmN0PWc/dFxid0sWqWnilqoCFN/giphy.gif" alt="Crowdsale Demo" width="800">
+</p>
 7. At the end of the token sale, the contract owner calls the `finalize()` function to complete the sale.
 8. The remaining tokens, if any, are transferred back to the contract owner.
-9. The contract owner can withdraw the Ether balance from the contract.
+9.  The contract owner can withdraw the Ether balance from the contract.
 
 ### Scenario 2: Failed Campaign
 
