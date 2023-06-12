@@ -66,7 +66,7 @@ In this scenario, the token sale campaign is successful. Here's a step-by-step w
 
 2. The contract owner approves whitelisting requests for participating addresses or manually adds addresses to the whitelist.
 3. During the token sale period, whitelisted participants send Ether to the contract address.
-4. The contract calculates the number of tokens to be allocated based on the Ether sent and the token price using this calculation requiredEth = (token amount / 10\*_18) _ token price
+4. The contract calculates the number of tokens to be allocated based on the Ether sent and the token price using this calculation `requiredEth = (token amount / 10**18) * token price`
 5. The contract transfers the allocated tokens to the participants' addresses.
 6. The tokens sold counter and the participants' token balances are updated accordingly.
 7. At the end of the token sale, the contract owner calls the `finalize()` function to complete the sale.
