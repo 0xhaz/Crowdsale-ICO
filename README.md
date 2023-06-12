@@ -14,8 +14,8 @@ This project implements a Crowdsale contract that facilitates the sale of tokens
   - [Getting Started](#getting-started)
   - [Usage](#usage)
   - [Project Walkthrough](#project-walkthrough)
-    - [Scenario 1: Campaign Successful](#scenario-1-campaign-successful)
-    - [Scenario 2: Campaign Failed](#scenario-2-campaign-failed)
+    - [Scenario 1: Success Campaign](#scenario-1-success-campaign)
+    - [Scenario 2: Failed Campaign](#scenario-2-failed-campaign)
   - [Contract Details](#contract-details)
   - [Contributing](#contributing)
   - [License](#license)
@@ -50,7 +50,7 @@ To participate in the token sale, users should follow the instructions below:
 
 ## Project Walkthrough
 
-### Scenario 1: Campaign Successful
+### Scenario 1: Success Campaign
 
 In this scenario, the token sale campaign is successful. Here's a step-by-step walkthrough of the process:
 
@@ -58,17 +58,22 @@ In this scenario, the token sale campaign is successful. Here's a step-by-step w
   <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExN2NmNmVjZTgxOTc0MGI5NGJmMWQ0ZTQ0ODhkMTBhZmEzZjUwMzcwZCZlcD12MV9pbnRlcm5hbF9naWZzX2dpZklkJmN0PWc/3MuPq6HAdmRFxZC4MB/giphy.gif" alt="Crowdsale Demo" width="800">
 </p>
 
-1. The contract owner deploys the Crowdsale contract with the desired parameters, such as token price, maximum tokens, sale start and end time, and purchase restrictions. For this demo purposes, we can set the if the campaign has reached 80% sold from the total supply to make sure the campaign is successful.
+1. The contract owner deploys the Crowdsale contract with the desired parameters, such as token price, maximum tokens, sale start and end time, and purchase restrictions. For this demo purposes, we can set the targeted amount of token sold has reached 80% from the total supply to make sure the campaign is successful.
+
+<p align="center">
+  <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNmQ5ZWIzZGYxYjM4Njc3NmJjNWVjYjhiNjU2NDgwYTg0ZDVhMWRhNCZlcD12MV9pbnRlcm5hbF9naWZzX2dpZklkJmN0PWc/nxVl4hBy9E8AS6YZbj/giphy.gif" alt="Crowdsale Demo" width="800">
+</p>
+
 2. The contract owner approves whitelisting requests for participating addresses or manually adds addresses to the whitelist.
 3. During the token sale period, whitelisted participants send Ether to the contract address.
-4. The contract calculates the number of tokens to be allocated based on the Ether sent and the token price.
+4. The contract calculates the number of tokens to be allocated based on the Ether sent and the token price using this calculation requiredEth = (token amount / 10\*_18) _ token price
 5. The contract transfers the allocated tokens to the participants' addresses.
 6. The tokens sold counter and the participants' token balances are updated accordingly.
 7. At the end of the token sale, the contract owner calls the `finalize()` function to complete the sale.
 8. The remaining tokens, if any, are transferred back to the contract owner.
 9. The contract owner can withdraw the Ether balance from the contract.
 
-### Scenario 2: Campaign Failed
+### Scenario 2: Failed Campaign
 
 In this scenario, the token sale campaign fails to reach its goals. Here's a step-by-step walkthrough of the process:
 
