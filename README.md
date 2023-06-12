@@ -91,6 +91,11 @@ In this scenario, the token sale campaign fails to reach its goals. Here's a ste
 2. The contract owner approves whitelisting requests for participating addresses or manually adds addresses to the whitelist.
 3. During the token sale period, participants send Ether to the contract address.
 4. The contract calculates the number of tokens to be allocated based on the Ether sent and the token price.
+
+<p align="center">
+  <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZGRiODBjOWU2N2ExZGZiOGVmN2M3ZDBhMThhN2YyNTI1M2I3NTQzNCZlcD12MV9pbnRlcm5hbF9naWZzX2dpZklkJmN0PWc/kn1tUPac6JzyE7XjZB/giphy.gif" alt="Crowdsale Demo" width="800">
+</p>
+
 5. If the token sale ends and the total tokens sold do not reach the minimum required, the contract owner decides to mark the campaign as failed.
 6. Participants can request refunds by calling the `refundCampaign()` function.
 7. The contract transfers the purchased tokens back to the contract and refunds the corresponding Ether amount to the participants.
