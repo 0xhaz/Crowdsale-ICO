@@ -28,7 +28,6 @@ contract Crowdsale {
     mapping(address => WhitelistStatus) public whitelistStatus;
     mapping(address => uint256) public purchaseAmount;
     mapping(address => bool) public isPendingWhitelist;
-    mapping(address => mapping(uint256 => uint256)) public ethTokenBalance;
 
     event Buy(uint256 amount, address buyer);
     event Finalize(uint256 amount, uint256 value);
@@ -95,8 +94,6 @@ contract Crowdsale {
         require(dappToken.transfer(msg.sender, _amount));
 
         tokensSold += _amount;
-
-        ethTokenBalance[msg.sender][purchaseAmount[msg.sender]] = msg.value;
 
         emit Buy(_amount, msg.sender);
     }
@@ -290,8 +287,6 @@ contract Crowdsale {
 
         uint256 ethAmount = (refundAmount / 1e18) * price;
         require(address(this).balance >= ethAmount, "Insufficient balance");
-
-        ethTokenBalance[msg.sender][refundAmount] -= ethAmount;
 
         (bool ethSuccess, ) = msg.sender.call{value: ethAmount}("");
         require(ethSuccess, "Failed to send Ether");
